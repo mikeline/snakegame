@@ -1,5 +1,6 @@
 import org.w3c.dom.css.Rect;
 
+import javax.management.timer.TimerNotification;
 import javax.swing.*;
 import java.awt.*;
 import javax.swing.border.BevelBorder;
@@ -90,8 +91,11 @@ public class SnakeGame extends JFrame
 
     class JPanelSnake extends JPanel implements KeyListener
     {
+        private long currentTimeMillis;
         JPanelSnake()
         {
+            timer = new Timer();
+            currentTimeMillis = System.currentTimeMillis();
             setPreferredSize(new Dimension(400, 400));
             addKeyListener(this);
             setFocusable(true);
@@ -150,23 +154,19 @@ public class SnakeGame extends JFrame
 
         @Override
         public void keyPressed(KeyEvent e) {
-            int keyCode = e.getKeyCode();
-            if (keyCode == KeyEvent.VK_UP)
-            {
-                snake.turnUp();
+            if (System.currentTimeMillis() - currentTimeMillis > 280) {
+                int keyCode = e.getKeyCode();
+                if (keyCode == KeyEvent.VK_UP) {
+                    snake.turnUp();
+                } else if (keyCode == KeyEvent.VK_DOWN) {
+                    snake.turnDown();
+                } else if (keyCode == KeyEvent.VK_RIGHT) {
+                    snake.turnRight();
+                } else if (keyCode == KeyEvent.VK_LEFT) {
+                    snake.turnLeft();
+                }
             }
-            else if (keyCode == KeyEvent.VK_DOWN)
-            {
-                snake.turnDown();
-            }
-            else if (keyCode == KeyEvent.VK_RIGHT)
-            {
-                snake.turnRight();
-            }
-            else if (keyCode == KeyEvent.VK_LEFT)
-            {
-                snake.turnLeft();
-            }
+            currentTimeMillis = System.currentTimeMillis();
         }
 
         @Override
@@ -309,11 +309,22 @@ public class SnakeGame extends JFrame
                 part[1] += incY;
                 body.set(i, part.clone());
 
+                // check if out of bounds
                 if (part[0] > 39 || part[1] > 39 || part[0] < 0 || part[1] < 0)
                 {
                     System.exit(0);
                 }
 
+                // check if hits itself
+                if (i == body.size() - 1)
+                {
+                    if (grid.getState(part[0], part[1]) == 1)
+                    {
+                        System.exit(0);
+                    }
+                }
+
+                // change direction of parts if needed
                 if (i < body.size() - 1)
                 {
                     if (timeToChangeDirection(part[0] + incX, part[1] + incY, prev[0], prev[1]))
@@ -323,14 +334,17 @@ public class SnakeGame extends JFrame
                         directions.set(i, direction.clone());
                     }
                 }
+
+                // check if hits a food item
                 if(i == body.size() - 1)
                 {
                     if(grid.getState(part[0], part[1]) == (byte)2)
                     {
                         canAdd = true;
                     }
-                    grid.setState(part[0], part[1], (byte)1);
                 }
+
+                grid.setState(part[0], part[1], (byte)1);
 
 
                 prev[0] = part[0];
